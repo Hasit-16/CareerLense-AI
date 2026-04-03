@@ -14,22 +14,46 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data, error } = await supabaseAdmin
+    // Get question data
+    const { data: question } = await supabaseAdmin
+      .from('questions')
+      .select('*')
+      .eq('id', questionId)
+      .single();
+
+    if (!question) {
+      return NextResponse.json({ error: 'Question not found' }, { status: 400 });
+    }
+
+    // Prevent duplicate answer natively matching the bounds
+    const { data: existing } = await supabaseAdmin
+      .from('answers')
+      .select('*')
+      .eq('question_id', questionId)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({ error: 'Already answered uniquely' }, { status: 400 });
+    }
+
+    const { error: insertError } = await supabaseAdmin
       .from('answers')
       .insert([
         {
-          question_id: questionId,
           session_id: sessionId,
-          selected_option: selectedOption
+          question_id: questionId,
+          selected_option: selectedOption,
+          dimension: question.dimension || 'unknown',
+          question_text: question.question_text
         }
       ]);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    return NextResponse.json({ error: 'Failed to submit answer' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to submit answer securely.' }, { status: 500 });
   }
 }

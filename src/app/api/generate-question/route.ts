@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { model } from '@/lib/gemini';
 import { createClient } from '@supabase/supabase-js';
+import { analyzeSession } from '@/lib/sessionAnalyzer';
 
 function getDatasetType(classLevel: string, stream?: string | null) {
   const normLevel = classLevel.replace(/\D/g, '');
@@ -81,13 +82,14 @@ export async function POST(req: NextRequest) {
       marksheetObj = marksheet;
     }
 
+    // Pull previously ingested DB constraints natively matching the current node
     const { data: qastate } = await supabaseAdmin
       .from('questions')
       .select('question_text, dimension, answers(selected_option)')
       .eq('session_id', session)
       .order('order_index', { ascending: true });
 
-    let previousAnswers: { question: string; answer: string; dimension: string }[] = [];
+    let previousAnswers: { question: string; selected_option: string; dimension: string }[] = [];
     const askedDimensions: string[] = [];
     
     if (qastate) {
@@ -95,16 +97,21 @@ export async function POST(req: NextRequest) {
         if (q.dimension) askedDimensions.push(q.dimension);
         return {
           question: q.question_text,
-          answer: (q.answers && q.answers.length > 0) ? q.answers[0].selected_option : 'No answer yet',
+          selected_option: (q.answers && q.answers.length > 0) ? q.answers[0].selected_option : 'No answer yet',
           dimension: q.dimension || 'unknown'
         };
-      }).filter(qa => qa.answer !== 'No answer yet');
+      }).filter(qa => qa.selected_option !== 'No answer yet');
     }
 
-    // Dynamic threshold: If Gemini returned is_final natively previously, we'd exit earlier. 
-    // Here we strictly protect against aggressive loops (hard stop at 10 just in case)
+    // Generate analytical boundaries dynamically mapped securely extracting logic inherently
+    let sessionAnalysis = null;
+    if (previousAnswers.length > 0) {
+      sessionAnalysis = analyzeSession(previousAnswers);
+    }
+
+    // Strictly enforce minimum of 5 logical inquiries before executing threshold convergence logic natively
     if (previousAnswers.length >= 10) {
-      return NextResponse.json({ success: true, isComplete: true, progress: 10 });
+      return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
     }
 
     const dataset = marksheetObj ? getDatasetType(marksheetObj.class_level, marksheetObj.stream) : 'unknown';
@@ -119,12 +126,13 @@ Context:
 - Previous Answers: ${JSON.stringify(previousAnswers)}
 - Already Asked Dimensions: ${JSON.stringify(askedDimensions)}
 - Dataset: ${dataset}
+- Session Analytical Assessment: ${JSON.stringify(sessionAnalysis)}
 
 Your task:
-Generate ONE new question that helps decide the best career path.
+Generate ONE new question that helps decide the best career path natively evaluating the aggregated Session Analytical Assessment if available.
 
 STRICT RULES:
-
+At least 5 questions must be asked 
 1. Question must be:
 - short (max 12 words)
 - simple (10th-grade level English)
@@ -143,9 +151,9 @@ STRICT RULES:
 - same wording
 
 4. The question MUST:
-- depend on previous answers
-- explore a new decision dimension
-- reduce confusion
+- depend on previous answers and session analytics inherently resolving boundaries natively!
+- explore a new decision dimension uniquely.
+- reduce confusion accurately.
 
 5. Dataset restriction:
 - If class = 10 \u2192 focus on stream vs diploma
@@ -158,10 +166,9 @@ STRICT RULES:
 - quick decision-making
 
 7. Stopping logic:
-- If you have determined a relatively clear path already or narrowed the student's constraints sufficiently past ~4 logical boundaries uniquely, output "is_final": true. Else false.
+- If you have already confidently traversed >5 boundaries logically tracking confidence actively > 80, explicitly output "is_final": true. Else strictly output false.
 
 Output JSON ONLY:
-
 {
   "question": "",
   "options": ["", "", "", ""],
@@ -186,18 +193,15 @@ Output JSON ONLY:
       return NextResponse.json({ error: 'Malformed AI response array format' }, { status: 500 });
     }
 
-    // Backend lengths validation constraints
     if (parsed.question.length > 120) {
-      console.warn("Question length limit tripped. Modifying artificially natively.", parsed.question);
       parsed.question = parsed.question.substring(0, 117) + '...';
     }
-
     parsed.options = parsed.options.map((opt: string) => {
       if (opt.length > 40) return opt.substring(0, 37) + '...';
       return opt;
     });
 
-    if (parsed.is_final) {
+    if (parsed.is_final && previousAnswers.length >= 5) {
       return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
     }
 
@@ -226,7 +230,8 @@ Output JSON ONLY:
       question: savedQuestion.question_text,
       options: savedQuestion.options_json,
       isComplete: false,
-      progress: previousAnswers.length + 1
+      progress: previousAnswers.length + 1,
+      analysis: sessionAnalysis
     });
   } catch (err: any) {
     console.error("API error:", err);
