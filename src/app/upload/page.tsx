@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -12,8 +13,13 @@ export default function UploadPage() {
     const formData = new FormData();
     formData.append('file', file);
 
+    const { data: { session } } = await supabase.auth.getSession();
+
     const res = await fetch('/api/upload-marksheet', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session?.access_token || ''}`
+      },
       body: formData,
     });
 
