@@ -1,12 +1,50 @@
+'use client';
+
+import { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
 
 export default function UploadPage() {
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleUpload = async () => {
+    if (!file) return alert('Please select a file');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('/api/upload-marksheet', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      alert(data.error);
+    } else {
+      alert('Upload successful');
+      window.location.href = '/questions';
+    }
+  };
+
   return (
     <AppShell>
-      <h2 className="text-2xl font-semibold">Upload Marksheet</h2>
-      <p className="mt-2 text-gray-600">
-        Upload flow will be implemented in the next mission.
-      </p>
+      <div className="flex flex-col items-center justify-center p-12 gap-4">
+        <h1 className="text-2xl font-semibold">Upload Marksheet</h1>
+
+        <input
+          type="file"
+          className="border p-2 rounded text-sm w-full max-w-sm"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+        />
+
+        <button
+          onClick={handleUpload}
+          className="bg-black text-white px-4 py-2 rounded"
+        >
+          Upload
+        </button>
+      </div>
     </AppShell>
   );
 }
