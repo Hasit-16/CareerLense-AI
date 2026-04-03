@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { model } from '@/lib/gemini';
-import { supabase } from '@/lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
@@ -11,11 +10,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing file path' }, { status: 400 });
     }
 
-    const { data } = supabase.storage
-      .from('marksheets')
-      .getPublicUrl(filePath);
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-    const fileUrl = data.publicUrl;
+    const { data: blob, error: downloadError } = await supabaseAdmin.storage
+      .from('marksheets')
+      .download(filePath);
+
+    if (downloadError || !blob) {
+      throw new Error(`Storage download failed: ${downloadError?.message || 'No blob returned'}`);
+    }
+
+    const buffer = await blob.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString('base64');
+    const mimeType = blob.type || 'image/jpeg';
 
     const prompt = `
 Extract marksheet data in strict JSON format:
@@ -38,12 +48,6 @@ Rules:
 - Detect stream if 12th
 `;
 
-    const imageResp = await fetch(fileUrl);
-    if (!imageResp.ok) throw new Error('Failed to fetch image from Storage');
-    const buffer = await imageResp.arrayBuffer();
-    const base64Image = Buffer.from(buffer).toString('base64');
-    const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
-
     const result = await model.generateContent([
       prompt,
       { inlineData: { mimeType, data: base64Image } }
@@ -55,7 +59,7 @@ Rules:
     try {
       parsed = JSON.parse(text);
     } catch {
-      return NextResponse.json({ error: 'Invalid AI response' }, { status: 500 });
+      return NextResponse.json({ error: 'Invalid AI response from Gemini' }, { status: 500 });
     }
 
     const validBoards = ['GSEB', 'CBSE', 'ICSE'];
@@ -64,11 +68,6 @@ Rules:
     const isValid =
       validBoards.includes(parsed.board) &&
       validClasses.includes(parsed.class_level);
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     await supabaseAdmin
       .from('marksheets')
@@ -87,7 +86,8 @@ Rules:
       data: parsed
     });
 
-  } catch (err) {
-    return NextResponse.json({ error: 'OCR failed' }, { status: 500 });
+  } catch (err: any) {
+    console.error("Internal OCR error:", err);
+    return NextResponse.json({ error: err?.message || 'OCR failed' }, { status: 500 });
   }
 }
