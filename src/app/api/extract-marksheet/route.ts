@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { model } from '@/lib/gemini';
 import { createClient } from '@supabase/supabase-js';
+import { logStep } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,22 +55,47 @@ Rules:
     ]);
 
     const text = result.response.text();
+    logStep("OCR RAW TEXT", text);
+    
     const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    logStep("NORMALIZED TEXT", cleanText);
 
     let parsed;
     try {
       parsed = JSON.parse(cleanText);
     } catch (e) {
-      console.error('Failed to parse Gemini output:', text);
+      logStep("ERROR", "Failed to parse Gemini output: " + text);
       return NextResponse.json({ error: 'Invalid AI response from Gemini' }, { status: 500 });
     }
 
+    logStep("PARSED DATA", parsed);
+    logStep("RAW SUBJECT LINES", parsed.subjects);
+    logStep("SUBJECTS EXTRACTED", parsed.subjects);
+
     const board = String(parsed.board || '').toUpperCase();
+    logStep("BOARD DETECTED", board);
+    
     const classLevel = String(parsed.class_level || '').toUpperCase();
+    logStep("CLASS DETECTED", classLevel);
+    
+    logStep("STREAM DETECTED", parsed.stream);
 
     const isValid =
       (board.includes('GSEB') || board.includes('CBSE') || board.includes('ICSE')) &&
       (classLevel.includes('10') || classLevel.includes('12') || classLevel === 'X' || classLevel === 'XII');
+
+    logStep("VALIDATION RESULT", {
+      board: parsed.board,
+      class_level: parsed.class_level,
+      stream: parsed.stream,
+      isValid
+    });
+
+    logStep("PERCENTAGE CALCULATED", parsed.percentage);
+    logStep("DB UPDATE PAYLOAD", {
+      filePath,
+      parsed
+    });
 
     await supabaseAdmin
       .from('marksheets')
@@ -126,7 +152,7 @@ Rules:
     });
 
   } catch (err: any) {
-    console.error("Internal OCR error:", err);
+    logStep("ERROR", err);
     return NextResponse.json({ error: err?.message || 'OCR failed' }, { status: 500 });
   }
 }
