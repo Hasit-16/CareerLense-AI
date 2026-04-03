@@ -6,12 +6,16 @@ import { v4 as uuidv4 } from 'uuid';
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    }
 
+    const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (!user || authError) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: `Unauthorized: ${authError?.message || 'Invalid token'}` }, { status: 401 });
     }
 
     const formData = await req.formData();

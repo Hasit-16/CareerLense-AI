@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppShell from '@/components/layout/AppShell';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) window.location.href = '/login';
+    });
+  }, []);
 
   const handleUpload = async () => {
     if (!file) return alert('Please select a file');
@@ -15,10 +21,16 @@ export default function UploadPage() {
 
     const { data: { session } } = await supabase.auth.getSession();
 
+    if (!session) {
+      alert('Session expired. Redirecting to login.');
+      window.location.href = '/login';
+      return;
+    }
+
     const res = await fetch('/api/upload-marksheet', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session?.access_token || ''}`
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: formData,
     });
