@@ -12,6 +12,7 @@ export default function QuestionsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
   const [progress, setProgress] = useState(0);
+  const [analysis, setAnalysis] = useState<any>(null);
 
   // 1. Fetch latest marksheet natively
   useEffect(() => {
@@ -74,6 +75,10 @@ export default function QuestionsPage() {
         setSessionId(data.sessionId);
       }
       
+      if (data.analysis) {
+        setAnalysis(data.analysis);
+      }
+
       setProgress(data.progress);
       setCurrentQuestion({
         id: data.questionId,
@@ -114,7 +119,11 @@ export default function QuestionsPage() {
         {loading ? (
           <div className="flex flex-col items-center gap-4">
             <span className="text-xl font-medium animate-pulse">Generating your next adaptive path...</span>
-            <span className="text-sm text-gray-500">Analyzing responses against feature weights...</span>
+            <span className="text-sm text-gray-500">
+              {analysis && analysis.confidence_score > 0 
+                ? `Understanding your preferences... (Confidence: ${analysis.confidence_score}%)`
+                : 'Analyzing responses against feature weights...'}
+            </span>
           </div>
         ) : currentQuestion ? (
           <div className="w-full flex w-full flex-col items-center">
