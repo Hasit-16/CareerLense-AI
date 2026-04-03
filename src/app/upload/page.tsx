@@ -17,12 +17,25 @@ export default function UploadPage() {
       body: formData,
     });
 
-    const data = await res.json();
+    const uploadData = await res.json();
 
-    if (data.error) {
-      alert(data.error);
+    if (uploadData.error) {
+      alert(uploadData.error);
     } else {
-      alert('Upload successful');
+      const ocrRes = await fetch('/api/extract-marksheet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath: uploadData.filePath })
+      });
+
+      const ocrData = await ocrRes.json();
+
+      if (!ocrData.isValid) {
+        alert('Invalid marksheet uploaded');
+        return;
+      }
+
+      alert('Upload & OCR successful');
       window.location.href = '/questions';
     }
   };
