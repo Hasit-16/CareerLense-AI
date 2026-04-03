@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     let session = sessionId;
+    let marksheetObj: any = null;
 
     if (!session) {
       const { data: marksheet } = await supabaseAdmin
@@ -49,6 +50,8 @@ export async function POST(req: NextRequest) {
       if (!marksheet) {
         return NextResponse.json({ error: 'Marksheet not found' }, { status: 404 });
       }
+      
+      marksheetObj = marksheet;
 
       const datasetType = getDatasetType(marksheet.class_level, marksheet.stream);
 
@@ -69,54 +72,104 @@ export async function POST(req: NextRequest) {
       }
 
       session = newSession.id;
+    } else {
+      const { data: marksheet } = await supabaseAdmin
+        .from('marksheets')
+        .select('*')
+        .eq('id', marksheetId)
+        .single();
+      marksheetObj = marksheet;
     }
 
     const { data: qastate } = await supabaseAdmin
       .from('questions')
-      .select('question_text, answers(selected_option)')
+      .select('question_text, dimension, answers(selected_option)')
       .eq('session_id', session)
       .order('order_index', { ascending: true });
 
-    let previousAnswers: { question: string; answer: string }[] = [];
+    let previousAnswers: { question: string; answer: string; dimension: string }[] = [];
+    const askedDimensions: string[] = [];
+    
     if (qastate) {
-      previousAnswers = qastate.map(q => ({
-        question: q.question_text,
-        answer: (q.answers && q.answers.length > 0) ? q.answers[0].selected_option : 'No answer yet'
-      })).filter(qa => qa.answer !== 'No answer yet');
+      previousAnswers = qastate.map(q => {
+        if (q.dimension) askedDimensions.push(q.dimension);
+        return {
+          question: q.question_text,
+          answer: (q.answers && q.answers.length > 0) ? q.answers[0].selected_option : 'No answer yet',
+          dimension: q.dimension || 'unknown'
+        };
+      }).filter(qa => qa.answer !== 'No answer yet');
     }
 
-    if (previousAnswers.length >= 5) {
-      return NextResponse.json({ success: true, isComplete: true });
+    // Dynamic threshold: If Gemini returned is_final natively previously, we'd exit earlier. 
+    // Here we strictly protect against aggressive loops (hard stop at 10 just in case)
+    if (previousAnswers.length >= 10) {
+      return NextResponse.json({ success: true, isComplete: true, progress: 10 });
     }
+
+    const dataset = marksheetObj ? getDatasetType(marksheetObj.class_level, marksheetObj.stream) : 'unknown';
 
     const prompt = `
-You are a career decision system.
+You are an intelligent career guide for Indian students.
 
-Generate ONE MCQ question based on:
+Context:
+- Class: ${marksheetObj?.class_level || 'Unknown'}
+- Stream: ${marksheetObj?.stream || 'Unknown'}
+- Features: ${JSON.stringify(featureData)}
+- Previous Answers: ${JSON.stringify(previousAnswers)}
+- Already Asked Dimensions: ${JSON.stringify(askedDimensions)}
+- Dataset: ${dataset}
 
-Features:
-${JSON.stringify(featureData, null, 2)}
+Your task:
+Generate ONE new question that helps decide the best career path.
 
-Previous Answers:
-${JSON.stringify(previousAnswers, null, 2)}
+STRICT RULES:
 
-Rules:
-- Only return JSON
-- No explanation
-- Question must be decision-oriented evaluating career path alignments
-- 4 options only in a string array
-- Keep language simple
-- Avoid academic jargon
-- Do NOT repeat questions
+1. Question must be:
+- short (max 12 words)
+- simple (10th-grade level English)
+- engaging and clear
+- no academic jargon
 
-Output format EXACTLY:
+2. Options must be:
+- max 4 options
+- each option max 6 words
+- short, catchy, easy to understand
+- NOT sentences
+
+3. Do NOT repeat:
+- same idea
+- same dimension
+- same wording
+
+4. The question MUST:
+- depend on previous answers
+- explore a new decision dimension
+- reduce confusion
+
+5. Dataset restriction:
+- If class = 10 \u2192 focus on stream vs diploma
+- If class = 12 \u2192 focus on career paths within stream
+- NEVER suggest out-of-dataset paths
+
+6. Style:
+- feel like asking a student directly
+- natural tone
+- quick decision-making
+
+7. Stopping logic:
+- If you have determined a relatively clear path already or narrowed the student's constraints sufficiently past ~4 logical boundaries uniquely, output "is_final": true. Else false.
+
+Output JSON ONLY:
+
 {
-  "question": "question text here",
-  "options": ["option 1", "option 2", "option 3", "option 4"]
+  "question": "",
+  "options": ["", "", "", ""],
+  "dimension": "",
+  "is_final": false
 }
 `;
     
-    // We already defined `model` in /lib/gemini.ts as 2.5-flash which is perfect.
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -125,12 +178,27 @@ Output format EXACTLY:
     try {
       parsed = JSON.parse(cleanText);
     } catch {
-      console.error("Gemini invalid text generated:", text);
-      return NextResponse.json({ error: 'Invalid AI response' }, { status: 500 });
+      console.error("Gemini invalid JSON text generated:", text);
+      return NextResponse.json({ error: 'Invalid AI response syntax' }, { status: 500 });
     }
     
     if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length === 0) {
-      return NextResponse.json({ error: 'Malformed AI response' }, { status: 500 });
+      return NextResponse.json({ error: 'Malformed AI response array format' }, { status: 500 });
+    }
+
+    // Backend lengths validation constraints
+    if (parsed.question.length > 120) {
+      console.warn("Question length limit tripped. Modifying artificially natively.", parsed.question);
+      parsed.question = parsed.question.substring(0, 117) + '...';
+    }
+
+    parsed.options = parsed.options.map((opt: string) => {
+      if (opt.length > 40) return opt.substring(0, 37) + '...';
+      return opt;
+    });
+
+    if (parsed.is_final) {
+      return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
     }
 
     const { data: savedQuestion, error: questionError } = await supabaseAdmin
@@ -140,6 +208,7 @@ Output format EXACTLY:
           session_id: session,
           question_text: parsed.question,
           options_json: parsed.options,
+          dimension: parsed.dimension || 'unknown',
           order_index: previousAnswers.length
         }
       ])
@@ -147,7 +216,7 @@ Output format EXACTLY:
       .single();
 
     if (questionError || !savedQuestion) {
-      return NextResponse.json({ error: 'Failed to save question' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to save question natively' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -161,6 +230,6 @@ Output format EXACTLY:
     });
   } catch (err: any) {
     console.error("API error:", err);
-    return NextResponse.json({ error: 'Failed to generate question' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to generate question engine tier' }, { status: 500 });
   }
 }

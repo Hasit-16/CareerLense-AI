@@ -94,7 +94,7 @@ export default function QuestionsPage() {
       const res = await fetch('/api/submit-answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId: currentQuestion.id, selectedOption: option })
+        body: JSON.stringify({ questionId: currentQuestion.id, selectedOption: option, sessionId: sessionId })
       });
       
       const data = await res.json();
@@ -119,7 +119,7 @@ export default function QuestionsPage() {
         ) : currentQuestion ? (
           <div className="w-full flex w-full flex-col items-center">
             <div className="mb-4 text-sm text-gray-500 font-mono tracking-widest uppercase">
-              Question {progress} of 5
+              Question {progress}
             </div>
             <h2 className="text-2xl font-bold mb-8 text-black/90">
               {currentQuestion.text}
@@ -128,7 +128,7 @@ export default function QuestionsPage() {
               {currentQuestion.options.map((opt: string, i: number) => (
                 <button
                   key={i}
-                  className="p-4 border border-gray-200 rounded shadow-sm hover:border-black hover:bg-black hover:text-white transition ease-out transform active:scale-[0.98]"
+                  className="p-4 border border-gray-200 rounded shadow-sm hover:border-black hover:bg-black hover:text-white transition-all ease-out transform active:scale-[0.98] focus:ring-2 focus:ring-black focus:outline-none"
                   onClick={() => handleOptionClick(opt)}
                 >
                   {opt}

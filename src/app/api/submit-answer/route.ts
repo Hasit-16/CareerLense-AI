@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
   try {
-    const { questionId, selectedOption } = await req.json();
+    const { questionId, selectedOption, sessionId } = await req.json();
 
-    if (!questionId || !selectedOption) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!questionId || !selectedOption || !sessionId) {
+      return NextResponse.json({ error: 'Missing required fields including bounds' }, { status: 400 });
     }
 
     const supabaseAdmin = createClient(
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       .insert([
         {
           question_id: questionId,
+          session_id: sessionId,
           selected_option: selectedOption
         }
       ]);
