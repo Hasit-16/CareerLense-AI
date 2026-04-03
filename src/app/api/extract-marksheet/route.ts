@@ -43,8 +43,8 @@ Extract marksheet data in strict JSON format:
 Rules:
 - Only return JSON
 - No explanation
-- Detect board (GSEB, CBSE, ICSE)
-- Detect class level (10th or 12th)
+- "board" MUST be exactly GSEB, CBSE, or ICSE
+- "class_level" MUST be exactly 10 or 12
 - Detect stream if 12th
 `;
 
@@ -54,20 +54,22 @@ Rules:
     ]);
 
     const text = result.response.text();
+    const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     let parsed;
     try {
-      parsed = JSON.parse(text);
-    } catch {
+      parsed = JSON.parse(cleanText);
+    } catch (e) {
+      console.error('Failed to parse Gemini output:', text);
       return NextResponse.json({ error: 'Invalid AI response from Gemini' }, { status: 500 });
     }
 
-    const validBoards = ['GSEB', 'CBSE', 'ICSE'];
-    const validClasses = ['10', '12'];
+    const board = String(parsed.board || '').toUpperCase();
+    const classLevel = String(parsed.class_level || '').toUpperCase();
 
     const isValid =
-      validBoards.includes(parsed.board) &&
-      validClasses.includes(parsed.class_level);
+      (board.includes('GSEB') || board.includes('CBSE') || board.includes('ICSE')) &&
+      (classLevel.includes('10') || classLevel.includes('12') || classLevel === 'X' || classLevel === 'XII');
 
     await supabaseAdmin
       .from('marksheets')
@@ -79,6 +81,43 @@ Rules:
         is_valid: isValid
       })
       .eq('file_path', filePath);
+
+    // Fetch marksheetId generated during upload explicitly
+    const { data: marksheetRow } = await supabaseAdmin
+      .from('marksheets')
+      .select('id')
+      .eq('file_path', filePath)
+      .single();
+
+    const marksheetId = marksheetRow?.id;
+
+    if (marksheetId) {
+      // Clear specific legacy subjects on this UUID natively
+      await supabaseAdmin.from('subjects').delete().eq('marksheet_id', marksheetId);
+      
+      const subjectInserts = (parsed.subjects || []).map((sub: any) => ({
+        marksheet_id: marksheetId,
+        subject_name: sub.name,
+        marks: Number(sub.marks) || 0
+      }));
+
+      // Flush exact arrays towards subjects component
+      if (subjectInserts.length > 0) {
+        await supabaseAdmin.from('subjects').insert(subjectInserts);
+      }
+      
+      // Ping feature compiler synchronously to execute analysis
+      try {
+        const absoluteUrl = new URL('/api/generate-features', req.url).toString();
+        await fetch(absoluteUrl, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ marksheetId })
+        });
+      } catch (triggerError) {
+        console.error("Failed to sequence feature gen externally:", triggerError);
+      }
+    }
 
     return NextResponse.json({
       success: true,
