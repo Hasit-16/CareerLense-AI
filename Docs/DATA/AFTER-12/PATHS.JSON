@@ -1,0 +1,340 @@
+{
+    "after_12th_options": [
+        {
+            "stream": "science",
+            "substreams": [
+                "PCM",
+                "PCB",
+                "PCMB"
+            ],
+            "courses": [
+                {
+                    "category": "Engineering",
+                    "courses": [
+                        "B.Tech",
+                        "BE"
+                    ],
+                    "specializations": [
+                        "Computer Science",
+                        "IT",
+                        "AI/ML",
+                        "Mechanical",
+                        "Civil",
+                        "Electrical"
+                    ],
+                    "entrance_exams": [
+                        "JEE Main",
+                        "GUJCET"
+                    ],
+                    "duration": "4 years",
+                    "career_roles": [
+                        "Software Engineer",
+                        "Engineer",
+                        "Developer"
+                    ],
+                    "salary_range": "3-10 LPA",
+                    "difficulty": "High"
+                },
+                {
+                    "category": "Medical",
+                    "courses": [
+                        "MBBS",
+                        "BDS",
+                        "BHMS",
+                        "BAMS"
+                    ],
+                    "entrance_exams": [
+                        "NEET"
+                    ],
+                    "duration": "5-6 years",
+                    "career_roles": [
+                        "Doctor",
+                        "Dentist"
+                    ],
+                    "salary_range": "5-12 LPA",
+                    "difficulty": "Very High"
+                },
+                {
+                    "category": "Allied Health",
+                    "courses": [
+                        "B.Pharm",
+                        "BSc Nursing",
+                        "Microbiology",
+                        "Biotechnology"
+                    ],
+                    "duration": "3-4 years",
+                    "career_roles": [
+                        "Pharmacist",
+                        "Lab Technician"
+                    ],
+                    "salary_range": "2-8 LPA"
+                },
+                {
+                    "category": "Non-Traditional",
+                    "courses": [
+                        "BCA",
+                        "BBA",
+                        "Design",
+                        "Animation",
+                        "Hotel Management"
+                    ],
+                    "duration": "3-4 years",
+                    "career_roles": [
+                        "Designer",
+                        "Manager",
+                        "Developer"
+                    ]
+                }
+            ],
+            "top_careers": [
+                "Engineering",
+                "Doctor",
+                "Data Scientist",
+                "Pilot",
+                "Architecture"
+            ]
+        },
+        {
+            "stream": "commerce",
+            "courses": [
+                {
+                    "category": "Core Commerce",
+                    "courses": [
+                        "B.Com",
+                        "B.Com Hons"
+                    ],
+                    "duration": "3 years",
+                    "career_roles": [
+                        "Accountant",
+                        "Auditor"
+                    ],
+                    "salary_range": "2-6 LPA"
+                },
+                {
+                    "category": "Professional Courses",
+                    "courses": [
+                        "CA",
+                        "CS",
+                        "CMA"
+                    ],
+                    "duration": "3-5 years",
+                    "career_roles": [
+                        "Chartered Accountant",
+                        "Company Secretary"
+                    ],
+                    "salary_range": "4-20 LPA",
+                    "difficulty": "Very High"
+                },
+                {
+                    "category": "Management",
+                    "courses": [
+                        "BBA",
+                        "BBM"
+                    ],
+                    "duration": "3 years",
+                    "career_roles": [
+                        "Manager",
+                        "Entrepreneur"
+                    ]
+                },
+                {
+                    "category": "Finance & Economics",
+                    "courses": [
+                        "BBA Finance",
+                        "BA Economics"
+                    ],
+                    "career_roles": [
+                        "Financial Analyst",
+                        "Investment Banker"
+                    ],
+                    "salary_range": "3-10 LPA"
+                },
+                {
+                    "category": "Other Options",
+                    "courses": [
+                        "Law (BBA LLB)",
+                        "BCA",
+                        "Hotel Management",
+                        "Digital Marketing"
+                    ]
+                }
+            ],
+            "top_careers": [
+                "CA",
+                "Banking",
+                "Finance",
+                "Business",
+                "Investment Banking"
+            ]
+        },
+        {
+            "stream": "arts",
+            "courses": [
+                {
+                    "category": "Core Arts",
+                    "courses": [
+                        "BA"
+                    ],
+                    "specializations": [
+                        "Psychology",
+                        "History",
+                        "Political Science",
+                        "Sociology",
+                        "English"
+                    ],
+                    "duration": "3 years",
+                    "career_roles": [
+                        "Teacher",
+                        "Researcher",
+                        "Civil Services"
+                    ]
+                },
+                {
+                    "category": "Law",
+                    "courses": [
+                        "BA LLB",
+                        "BBA LLB"
+                    ],
+                    "duration": "5 years",
+                    "entrance_exams": [
+                        "CLAT"
+                    ],
+                    "career_roles": [
+                        "Lawyer",
+                        "Legal Advisor"
+                    ]
+                },
+                {
+                    "category": "Creative",
+                    "courses": [
+                        "B.Des",
+                        "Fashion Design",
+                        "Interior Design",
+                        "Fine Arts"
+                    ],
+                    "career_roles": [
+                        "Designer",
+                        "Artist"
+                    ]
+                },
+                {
+                    "category": "Media",
+                    "courses": [
+                        "Journalism",
+                        "Mass Communication"
+                    ],
+                    "career_roles": [
+                        "Journalist",
+                        "Content Creator"
+                    ]
+                },
+                {
+                    "category": "Management",
+                    "courses": [
+                        "BBA"
+                    ],
+                    "career_roles": [
+                        "HR",
+                        "Marketing"
+                    ]
+                }
+            ],
+            "top_careers": [
+                "UPSC",
+                "Law",
+                "Psychology",
+                "Media",
+                "Design"
+            ]
+        },
+        {
+            "stream": "all_streams_common",
+            "courses": [
+                {
+                    "category": "Computer & IT",
+                    "courses": [
+                        "BCA",
+                        "Web Development",
+                        "Data Science",
+                        "AI/ML"
+                    ],
+                    "career_roles": [
+                        "Developer",
+                        "Analyst"
+                    ],
+                    "salary_range": "3-15 LPA"
+                },
+                {
+                    "category": "Design & Creative",
+                    "courses": [
+                        "Graphic Design",
+                        "Animation",
+                        "UI/UX",
+                        "Game Design"
+                    ],
+                    "career_roles": [
+                        "Designer"
+                    ]
+                },
+                {
+                    "category": "Hotel & Hospitality",
+                    "courses": [
+                        "Hotel Management"
+                    ],
+                    "career_roles": [
+                        "Hotel Manager"
+                    ]
+                },
+                {
+                    "category": "Government Jobs",
+                    "exams": [
+                        "SSC CGL",
+                        "Banking",
+                        "UPSC",
+                        "GPSC"
+                    ],
+                    "career_roles": [
+                        "Government Officer"
+                    ]
+                }
+            ]
+        }
+    ],
+    "entrance_exams": [
+        {
+            "exam": "JEE Main",
+            "stream": "Science PCM",
+            "for": "Engineering"
+        },
+        {
+            "exam": "NEET",
+            "stream": "Science PCB",
+            "for": "Medical"
+        },
+        {
+            "exam": "GUJCET",
+            "stream": "Science",
+            "for": "State Engineering/Pharma"
+        },
+        {
+            "exam": "CLAT",
+            "stream": "All",
+            "for": "Law"
+        },
+        {
+            "exam": "CA Foundation",
+            "stream": "Commerce",
+            "for": "CA"
+        },
+        {
+            "exam": "UPSC",
+            "stream": "All",
+            "for": "Civil Services"
+        },
+        {
+            "exam": "SSC CGL",
+            "stream": "All",
+            "for": "Government Jobs"
+        }
+    ]
+}
