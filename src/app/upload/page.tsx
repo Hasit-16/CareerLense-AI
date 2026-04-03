@@ -48,8 +48,13 @@ export default function UploadPage() {
 
       const ocrData = await ocrRes.json();
 
+      if (ocrData.error) {
+        alert('OCR Error: ' + ocrData.error);
+        return;
+      }
+
       if (!ocrData.isValid) {
-        alert('Invalid marksheet uploaded');
+        alert('Invalid marksheet uploaded. Check the board or class level constraint.');
         return;
       }
 

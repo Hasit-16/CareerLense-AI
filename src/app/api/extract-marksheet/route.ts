@@ -38,9 +38,15 @@ Rules:
 - Detect stream if 12th
 `;
 
+    const imageResp = await fetch(fileUrl);
+    if (!imageResp.ok) throw new Error('Failed to fetch image from Storage');
+    const buffer = await imageResp.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString('base64');
+    const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
+
     const result = await model.generateContent([
       prompt,
-      { fileData: { mimeType: "image/jpeg", fileUri: fileUrl } }
+      { inlineData: { mimeType, data: base64Image } }
     ]);
 
     const text = result.response.text();
