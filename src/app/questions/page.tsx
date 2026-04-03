@@ -13,6 +13,7 @@ export default function QuestionsPage() {
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
   const [progress, setProgress] = useState(0);
   const [analysis, setAnalysis] = useState<any>(null);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   // 1. Fetch latest marksheet natively
   useEffect(() => {
@@ -85,6 +86,7 @@ export default function QuestionsPage() {
         text: data.question,
         options: data.options
       });
+      setSelectedOption(null);
     } catch (e) {
       alert("Failed to load question.");
     }
@@ -92,7 +94,10 @@ export default function QuestionsPage() {
   };
 
   const handleOptionClick = async (option: string) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || selectedOption) return;
+    setSelectedOption(option);
+    // Add artificial delay purely for UX smoothness natively explicitly tracking visual click selection firmly!
+    await new Promise(r => setTimeout(r, 400));
     setLoading(true);
 
     try {
@@ -134,15 +139,23 @@ export default function QuestionsPage() {
               {currentQuestion.text}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-              {currentQuestion.options.map((opt: string, i: number) => (
-                <button
-                  key={i}
-                  className="p-4 border border-gray-200 rounded shadow-sm hover:border-black hover:bg-black hover:text-white transition-all ease-out transform active:scale-[0.98] focus:ring-2 focus:ring-black focus:outline-none"
-                  onClick={() => handleOptionClick(opt)}
-                >
-                  {opt}
-                </button>
-              ))}
+              {currentQuestion.options.map((opt: string, i: number) => {
+                const isSelected = selectedOption === opt;
+                return (
+                  <button
+                    key={i}
+                    disabled={selectedOption !== null}
+                    className={`p-4 border rounded shadow-sm transition-all ease-out transform ${
+                      isSelected 
+                        ? 'border-black bg-black text-white scale-[0.98]' 
+                        : 'border-gray-200 hover:border-black hover:bg-black hover:text-white active:scale-[0.98] focus:ring-2 focus:ring-black focus:outline-none'
+                    } ${selectedOption && !isSelected ? 'opacity-50 pointer-events-none' : ''}`}
+                    onClick={() => handleOptionClick(opt)}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (

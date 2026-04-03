@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { model } from '@/lib/gemini';
+import { generateQuestionWithCohere } from "@/lib/cohere";
 import { createClient } from '@supabase/supabase-js';
 import { analyzeSession } from '@/lib/sessionAnalyzer';
 
@@ -53,18 +53,11 @@ export async function POST(req: NextRequest) {
       }
       
       marksheetObj = marksheet;
-
       const datasetType = getDatasetType(marksheet.class_level, marksheet.stream);
 
       const { data: newSession, error: sessionError } = await supabaseAdmin
         .from('question_sessions')
-        .insert([
-          {
-            user_id: marksheet.user_id,
-            marksheet_id: marksheetId,
-            dataset_type: datasetType
-          }
-        ])
+        .insert([{ user_id: marksheet.user_id, marksheet_id: marksheetId, dataset_type: datasetType }])
         .select()
         .single();
         
@@ -82,7 +75,6 @@ export async function POST(req: NextRequest) {
       marksheetObj = marksheet;
     }
 
-    // Pull previously ingested DB constraints natively matching the current node
     const { data: qastate } = await supabaseAdmin
       .from('questions')
       .select('question_text, dimension, answers(selected_option)')
@@ -103,107 +95,101 @@ export async function POST(req: NextRequest) {
       }).filter(qa => qa.selected_option !== 'No answer yet');
     }
 
-    // Generate analytical boundaries dynamically mapped securely extracting logic inherently
     let sessionAnalysis = null;
     if (previousAnswers.length > 0) {
       sessionAnalysis = analyzeSession(previousAnswers);
     }
 
-    // Strictly enforce minimum of 5 logical inquiries before executing threshold convergence logic natively
-    if (previousAnswers.length >= 10) {
+    // Dynamic Flow max 8 stopping condition inherently
+    if (previousAnswers.length >= 8) {
+      return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
+    }
+    
+    // Stop dynamically when confident bounds reached cleanly tracking natively
+    if (previousAnswers.length >= 5 && sessionAnalysis && sessionAnalysis.confidence_score >= 80) {
       return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
     }
 
     const dataset = marksheetObj ? getDatasetType(marksheetObj.class_level, marksheetObj.stream) : 'unknown';
 
     const prompt = `
-You are an intelligent career guide for Indian students.
+You are a smart career guide for Indian students.
 
 Context:
 - Class: ${marksheetObj?.class_level || 'Unknown'}
 - Stream: ${marksheetObj?.stream || 'Unknown'}
 - Features: ${JSON.stringify(featureData)}
 - Previous Answers: ${JSON.stringify(previousAnswers)}
-- Already Asked Dimensions: ${JSON.stringify(askedDimensions)}
+- Asked Dimensions: ${JSON.stringify(askedDimensions)}
 - Dataset: ${dataset}
-- Session Analytical Assessment: ${JSON.stringify(sessionAnalysis)}
 
-Your task:
-Generate ONE new question that helps decide the best career path natively evaluating the aggregated Session Analytical Assessment if available.
+Task:
+Generate ONE short MCQ question.
 
 STRICT RULES:
-At least 5 questions must be asked 
-1. Question must be:
-- short (max 12 words)
-- simple (10th-grade level English)
-- engaging and clear
-- no academic jargon
 
-2. Options must be:
-- max 4 options
-- each option max 6 words
-- short, catchy, easy to understand
+1. Question:
+- max 12 words
+- simple English
+- student-friendly
+- engaging tone
+
+2. Options:
+- exactly 4
+- max 6 words each
 - NOT sentences
+- clear and meaningful
 
-3. Do NOT repeat:
-- same idea
-- same dimension
-- same wording
+3. No repetition:
+- do not repeat previous idea
+- do not repeat dimension
+- explore new decision area
 
-4. The question MUST:
-- depend on previous answers and session analytics inherently resolving boundaries natively!
-- explore a new decision dimension uniquely.
-- reduce confusion accurately.
+4. Adaptivity:
+- must depend on previous answers
+- refine decision direction
 
-5. Dataset restriction:
-- If class = 10 \u2192 focus on stream vs diploma
-- If class = 12 \u2192 focus on career paths within stream
-- NEVER suggest out-of-dataset paths
-
-6. Style:
-- feel like asking a student directly
-- natural tone
-- quick decision-making
-
-7. Stopping logic:
-- If you have already confidently traversed >5 boundaries logically tracking confidence actively > 80, explicitly output "is_final": true. Else strictly output false.
+5. Dataset rule:
+- Class 10 -> ask about stream vs diploma
+- Class 12 -> ask about career paths in stream
+- never go outside dataset
 
 Output JSON ONLY:
+
 {
   "question": "",
   "options": ["", "", "", ""],
-  "dimension": "",
-  "is_final": false
+  "dimension": ""
 }
 `;
     
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    // Execute precisely mapped Cohere execution node!
+    const text = await generateQuestionWithCohere(prompt);
     const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     let parsed;
     try {
       parsed = JSON.parse(cleanText);
     } catch {
-      console.error("Gemini invalid JSON text generated:", text);
+      console.error("Cohere invalid JSON text generated:", text);
       return NextResponse.json({ error: 'Invalid AI response syntax' }, { status: 500 });
     }
     
-    if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length === 0) {
-      return NextResponse.json({ error: 'Malformed AI response array format' }, { status: 500 });
+    console.log("[QUESTION GENERATED]", parsed);
+
+    if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length !== 4) {
+      throw new Error("Invalid question format");
     }
 
     if (parsed.question.length > 120) {
-      parsed.question = parsed.question.substring(0, 117) + '...';
+      throw new Error("Question too long");
     }
-    parsed.options = parsed.options.map((opt: string) => {
-      if (opt.length > 40) return opt.substring(0, 37) + '...';
-      return opt;
-    });
 
-    if (parsed.is_final && previousAnswers.length >= 5) {
-      return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
-    }
+    parsed.options.forEach((opt: string) => {
+      if (opt.length > 40) {
+        throw new Error("Option too long");
+      }
+    });
 
     const { data: savedQuestion, error: questionError } = await supabaseAdmin
       .from('questions')
@@ -235,6 +221,6 @@ Output JSON ONLY:
     });
   } catch (err: any) {
     console.error("API error:", err);
-    return NextResponse.json({ error: 'Failed to generate question engine tier' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Failed to generate question engine tier' }, { status: 500 });
   }
 }
