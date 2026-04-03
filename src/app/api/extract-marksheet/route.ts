@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { model } from '@/lib/gemini';
 import { createClient } from '@supabase/supabase-js';
 import { logStep } from '@/lib/logger';
+import Tesseract from 'tesseract.js';
+import { generateJSONWithCohere } from '@/lib/cohere';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,37 +26,35 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = await blob.arrayBuffer();
-    const base64Image = Buffer.from(buffer).toString('base64');
-    const mimeType = blob.type || 'image/jpeg';
+    const rawImageBuffer = Buffer.from(buffer);
+
+    logStep("STARTING TESSERACT OCR", "Evaluating buffer structure...");
+    const { data: { text: rawText } } = await Tesseract.recognize(rawImageBuffer, 'eng');
+    logStep("OCR RAW TEXT", rawText);
 
     const prompt = `
-Extract marksheet data in strict JSON format:
+Extract marksheet data precisely into this JSON format based on the following chaotic OCR text:
 
 {
-  "board": "",
-  "class_level": "",
-  "stream": "",
+  "board": "GSEB, CBSE, or ICSE",
+  "class_level": "10 or 12",
+  "stream": "Science, Commerce, Arts (if 12th only)",
   "subjects": [
-    { "name": "", "marks": 0 }
+    { "name": "Subject Name", "marks": 0 }
   ],
-  "percentage": 0
+  "percentage": 0.0
 }
 
+Raw Unstructured OCR Text:
+${rawText}
+
 Rules:
-- Only return JSON
-- No explanation
-- "board" MUST be exactly GSEB, CBSE, or ICSE
-- "class_level" MUST be exactly 10 or 12
-- Detect stream if 12th
+- Strictly return valid JSON. No explanations.
+- Try to detect percentage accurately.
+- Stream can be empty if class 10.
 `;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { mimeType, data: base64Image } }
-    ]);
-
-    const text = result.response.text();
-    logStep("OCR RAW TEXT", text);
+    const text = await generateJSONWithCohere(prompt);
     
     const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
     logStep("NORMALIZED TEXT", cleanText);

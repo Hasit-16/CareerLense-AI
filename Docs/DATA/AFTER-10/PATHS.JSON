@@ -1,0 +1,259 @@
+{
+  "after_10th_options": [
+    {
+      "path_id": "science",
+      "path_name": "Science Stream",
+      "eligibility": "Pass 10th (GSEB/CBSE/ICSE), usually 60%+ recommended",
+      "duration": "2 years (11th-12th)",
+      "difficulty": "High",
+      "streams": [
+        {
+          "stream_type": "PCM",
+          "subjects": [
+            "Physics",
+            "Chemistry",
+            "Mathematics"
+          ],
+          "careers": [
+            "Engineering (B.Tech)",
+            "Data Science",
+            "AI/ML",
+            "Architecture",
+            "Defense (NDA)"
+          ]
+        },
+        {
+          "stream_type": "PCB",
+          "subjects": [
+            "Physics",
+            "Chemistry",
+            "Biology"
+          ],
+          "careers": [
+            "MBBS",
+            "BDS",
+            "Pharmacy",
+            "Biotechnology",
+            "Nursing"
+          ]
+        },
+        {
+          "stream_type": "PCMB",
+          "subjects": [
+            "Physics",
+            "Chemistry",
+            "Mathematics",
+            "Biology"
+          ],
+          "careers": [
+            "Engineering",
+            "Medical",
+            "Research",
+            "Flexible career switching"
+          ]
+        }
+      ],
+      "exams": [
+        "JEE",
+        "NEET",
+        "GUJCET"
+      ],
+      "pros": [
+        "Highest salary potential",
+        "Wide career options",
+        "Top-tier opportunities"
+      ],
+      "cons": [
+        "Very high competition",
+        "Stressful",
+        "Requires consistency"
+      ]
+    },
+    {
+      "path_id": "commerce",
+      "path_name": "Commerce Stream",
+      "eligibility": "Pass 10th",
+      "duration": "2 years",
+      "difficulty": "Medium",
+      "subjects": [
+        "Accountancy",
+        "Economics",
+        "Business Studies"
+      ],
+      "careers": [
+        "Chartered Accountant (CA)",
+        "Company Secretary (CS)",
+        "Cost Accountant (CMA)",
+        "Banking",
+        "MBA",
+        "Business/Startup"
+      ],
+      "exams": [
+        "CA Foundation",
+        "CS",
+        "CMA",
+        "Banking Exams"
+      ],
+      "pros": [
+        "Strong financial career",
+        "Business-oriented",
+        "Less pressure than science"
+      ],
+      "cons": [
+        "Requires discipline",
+        "Long path for CA/CS"
+      ]
+    },
+    {
+      "path_id": "arts",
+      "path_name": "Arts/Humanities",
+      "eligibility": "Pass 10th",
+      "duration": "2 years",
+      "difficulty": "Low-Medium",
+      "subjects": [
+        "History",
+        "Political Science",
+        "Psychology",
+        "Sociology",
+        "Geography"
+      ],
+      "careers": [
+        "UPSC",
+        "State Government Jobs",
+        "Law (LLB)",
+        "Journalism",
+        "Psychology",
+        "Design"
+      ],
+      "exams": [
+        "UPSC",
+        "GPSC",
+        "CLAT"
+      ],
+      "pros": [
+        "Flexible",
+        "Good for government exams",
+        "Creative fields"
+      ],
+      "cons": [
+        "Less structured",
+        "Requires self-discipline"
+      ]
+    },
+    {
+      "path_id": "diploma",
+      "path_name": "Diploma/Polytechnic",
+      "eligibility": "Pass 10th",
+      "duration": "3 years",
+      "difficulty": "Medium",
+      "fields": [
+        "Mechanical Engineering",
+        "Civil Engineering",
+        "Computer Engineering",
+        "Electrical Engineering",
+        "Pharmacy",
+        "Hotel Management",
+        "Fashion Design"
+      ],
+      "careers": [
+        "Junior Engineer",
+        "Technician",
+        "IT Jobs",
+        "Lateral Entry to B.Tech (2nd year)"
+      ],
+      "exams": [
+        "ACPDC Gujarat Admission"
+      ],
+      "pros": [
+        "Practical learning",
+        "Faster job",
+        "Less theory"
+      ],
+      "cons": [
+        "Lower initial salary",
+        "Needs upgrade for growth"
+      ]
+    },
+    {
+      "path_id": "iti",
+      "path_name": "ITI/Vocational",
+      "eligibility": "Pass 10th",
+      "duration": "6 months - 2 years",
+      "difficulty": "Low",
+      "fields": [
+        "Electrician",
+        "Fitter",
+        "Mechanic",
+        "Mobile Repair",
+        "Plumbing",
+        "Welding"
+      ],
+      "careers": [
+        "Technician",
+        "Freelancer",
+        "Small business owner"
+      ],
+      "exams": [],
+      "pros": [
+        "Fast earning",
+        "Low cost",
+        "Skill-based"
+      ],
+      "cons": [
+        "Low salary initially",
+        "Limited growth without upgrade"
+      ]
+    },
+    {
+      "path_id": "short_courses",
+      "path_name": "Skill-Based Courses",
+      "eligibility": "Anyone after 10th",
+      "duration": "3-12 months",
+      "difficulty": "Variable",
+      "fields": [
+        "Web Development",
+        "Graphic Design",
+        "Video Editing",
+        "Digital Marketing",
+        "Animation",
+        "UI/UX Design"
+      ],
+      "careers": [
+        "Freelancer",
+        "Remote Jobs",
+        "Startup",
+        "Side Income"
+      ],
+      "pros": [
+        "High income potential",
+        "Freelancing",
+        "Future-proof"
+      ],
+      "cons": [
+        "Self-learning required",
+        "No formal degree"
+      ]
+    },
+    {
+      "path_id": "govt_jobs",
+      "path_name": "Government Jobs (After 10th)",
+      "eligibility": "Pass 10th",
+      "jobs": [
+        "Railway Group D",
+        "SSC MTS",
+        "Police Constable",
+        "Army GD",
+        "Post Office GDS"
+      ],
+      "salary_range": "18000-25000",
+      "pros": [
+        "Job security",
+        "Stable income"
+      ],
+      "cons": [
+        "Low salary",
+        "Limited growth"
+      ]
+    }
+  ]
+}

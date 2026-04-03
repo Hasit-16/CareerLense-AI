@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateRecommendation } from '@/lib/recommendationEngine';
-import { model } from '@/lib/gemini';
+import { generateJSONWithCohere } from '@/lib/cohere';
 import { analyzeSession } from '@/lib/sessionAnalyzer';
 import fs from 'fs';
 import path from 'path';
@@ -86,13 +86,13 @@ STRICT JSON OUTPUT COMPLIANCE ONLY:
     let parentSummaryStr = "";
 
     try {
-      const gResult = await model.generateContent(prompt);
-      const output = gResult.response.text().replace(/```json/gi, '').replace(/```/g, '').trim();
+      const outputRaw = await generateJSONWithCohere(prompt);
+      const output = outputRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
       const p = JSON.parse(output);
       explanationStr = p.explanation || "System logically determined alignment.";
       parentSummaryStr = p.parent_summary || "Aligned perfectly structurally with student parameters.";
     } catch (e) {
-      console.warn("Formatting schema failed inside Gemini structural generator natively:", e);
+      console.warn("Formatting schema failed inside Cohere structural generator natively:", e);
       explanationStr = "Determined dynamically strictly using numerical analysis boundaries matching session arrays inherently.";
       parentSummaryStr = "Your child exhibits robust analytical alignment with the core recommendations presented structurally.";
     }

@@ -240,8 +240,7 @@ Sections:
 7. Parent-Readable Verdict
 8. Next-Step Risk Preventer
 9. Career Tradeoff / Reality
-10. 30-Day Roadmap
-11. Final Action Panel
+10. FINAL ACTION PANEL
 
 This is the most important page.
 
