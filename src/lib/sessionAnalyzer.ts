@@ -8,42 +8,44 @@ export function analyzeSession(answers: any[]) {
   let creative = 0;
 
   for (const a of answers) {
-    // Determine the answer string format safely parsing strings natively
     const val = (typeof a === 'string' ? a : (a.selected_option || a.answer || '')).toLowerCase();
     
     let isConsistent = true;
 
-    // Dominant Interests mapping
-    if (val.includes('coding') || val.includes('software') || val.includes('tech') || val.includes('computer')) {
+    // Behavioral -> Technical / Logic
+    if (val.includes('analytical') || val.includes('logic') || val.includes('focus') || val.includes('startup') || val.includes('reading logic')) {
       technical++;
       dominant_interests.add('software');
-    }
-    else if (val.includes('business') || val.includes('commerce') || val.includes('money') || val.includes('finance')) {
-      business++;
-      dominant_interests.add('commerce');
-    }
-    else if (val.includes('design') || val.includes('art') || val.includes('creative') || val.includes('draw')) {
-      creative++;
-      dominant_interests.add('creative');
-    }
-    else if (val.includes('machine') || val.includes('physics') || val.includes('engineering') || val.includes('practical')) {
-      technical++;
       dominant_interests.add('engineering');
     }
-    else {
-      // If none match exactly, we flag it as an inconsistent logical drift for confidence reduction
-      isConsistent = false;
+    // Behavioral -> Practical / Hands-on
+    else if (val.includes('practical') || val.includes('doing') || val.includes('active') || val.includes('hands-on')) {
+      technical++;
+      dominant_interests.add('engineering');
+      rejected_paths.add('commerce'); 
     }
-
-    // Rejected Paths strictly mapping avoidance keywords
-    if (val.includes('no lab') || val.includes('avoid lab') || val.includes('theory') || val.includes('hate research')) {
+    // Behavioral -> Observational / Research
+    else if (val.includes('observational') || val.includes('details') || val.includes('research') || val.includes('quiet')) {
+      technical++;
+      dominant_interests.add('research');
+      dominant_interests.add('medical');
+    }
+    // Behavioral -> People / Business
+    else if (val.includes('people') || val.includes('team') || val.includes('collaboration') || val.includes('management')) {
+      business++;
+      dominant_interests.add('commerce');
+      dominant_interests.add('management');
       rejected_paths.add('research');
     }
-    if (val.includes('no math') || val.includes('hate math') || val.includes('avoid calculation')) {
+    // Behavioral -> Creative / Abstract
+    else if (val.includes('creative') || val.includes('visualizing') || val.includes('design') || val.includes('freelance')) {
+      creative++;
+      dominant_interests.add('creative');
       rejected_paths.add('engineering');
     }
-    if (val.includes('no business') || val.includes('hate commerce') || val.includes('avoid money')) {
-      rejected_paths.add('commerce');
+    else {
+      // Unmapped generic behaviour 
+      isConsistent = false;
     }
 
     if (isConsistent) consistentCount++;
@@ -51,7 +53,9 @@ export function analyzeSession(answers: any[]) {
 
   const total = answers.length;
   // Calculate raw aggregate score dynamically matching percentage rules accurately mapped
-  const confidence_score = total > 0 ? (consistentCount / total) * 100 : 0;
+  let confidence_score = total > 0 ? (consistentCount / total) * 100 : 0;
+  
+  if (total < 3) confidence_score = Math.min(confidence_score, 40);
 
   let decision_direction = 'undecided';
   if (technical > business && technical > creative) decision_direction = 'technical';
