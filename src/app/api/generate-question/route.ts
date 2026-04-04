@@ -114,53 +114,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
     }
 
-    const { currentPath, dimension, allowedDomains } = getNextStep(
+    const { currentPath, dimension, mappedOptions } = getNextStep(
       marksheetObj?.class_level || '10',
       marksheetObj?.stream || null,
       previousAnswers
     );
 
-    console.log("[FLOW]", currentPath, dimension, allowedDomains);
+    console.log("[BEHAVIOR QUESTION]", dimension, mappedOptions);
 
     const prompt = `
 You are NOT allowed to think freely.
 
-You are only allowed to convert structured input into a clean MCQ.
+You are ONLY allowed to convert structured decision input into an engaging behavioral MCQ.
 
 INPUT:
 - Class: ${marksheetObj?.class_level || 'Unknown'}
 - Stream: ${marksheetObj?.stream || 'Unknown'}
 - Current Path: ${currentPath}
-- Allowed Domains: ${JSON.stringify(allowedDomains)}
-- Question Dimension: ${dimension}
+- Dimension: ${dimension}
+- Options (fixed meaning): ${JSON.stringify(mappedOptions)}
 - Previous Answers: ${JSON.stringify(previousAnswers)}
 
 RULES:
 
 1. Question:
-- max 10 words
-- very simple English
-- for Indian students
+- must feel interesting and human
+- must NOT mention subjects or careers
+- must reflect behavior, thinking, or preference
+- max 12 words
+- simple English (Indian students)
 
 2. Options:
 - exactly 4
-- max 4 words each
-- MUST come ONLY from allowed domains
-- DO NOT invent anything outside allowedDomains
+- max 3 words each
+- rewrite for attractiveness
+- MUST keep original meaning
 
 3. Strict Boundaries:
 - DO NOT introduce new topics
-- DO NOT jump domains
-- DO NOT go outside dataset
-- DO NOT generate research or advanced topics
+- DO NOT mention engineering, BSc, commerce, etc
+- DO NOT invent options outside given list
+- DO NOT jump outside currentPath
 
-4. Adaptivity:
-- Question MUST depend on previous answers
-- Must refine decision within currentPath
+4. Behavior Mapping:
+Each option represents a hidden decision signal:
+- analytical -> logic-based careers
+- practical -> hands-on careers
+- observational -> research/analysis
+- people-oriented -> management/social
 
-5. Class Rule:
-- If class = 10 -> ONLY ask stream vs diploma
-- If class = 12 -> ONLY ask career inside stream
+5. Adaptivity:
+- Question must feel like continuation of previous answers
+- Must refine user personality, not repeat
 
 OUTPUT JSON ONLY:
 
