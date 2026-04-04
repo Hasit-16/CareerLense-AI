@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { logStep } from '@/lib/logger';
 import Tesseract from 'tesseract.js';
 import { parseMarksheet } from '@/lib/parseMarksheet';
+import path from 'path';
 
 // Tesseract is used only for raw text extraction.
 // No AI provider is used in OCR or parsing.
@@ -31,8 +32,19 @@ export async function POST(req: NextRequest) {
     const buffer = await blob.arrayBuffer();
     const rawImageBuffer = Buffer.from(buffer);
 
-    logStep("[OCR] Tesseract extraction started", "Evaluating buffer structure...");
-    const { data: { text: rawText } } = await Tesseract.recognize(rawImageBuffer, 'eng');
+    logStep("[OCR] Tesseract extraction started", "Evaluating buffer structure locally...");
+    
+    // Natively construct absolute paths using process.cwd() bypassing Next.js /ROOT abstraction bounds natively!
+    const workerPath = path.join(process.cwd(), 'node_modules', 'tesseract.js', 'src', 'worker-script', 'node', 'index.js');
+    
+    // Explicitly configure Tesseract worker avoiding Next.js edge-compilation failures intrinsically
+    const worker = await Tesseract.createWorker('eng', 1, {
+      workerPath
+    });
+    
+    const { data: { text: rawText } } = await worker.recognize(rawImageBuffer);
+    await worker.terminate();
+    
     logStep("OCR RAW TEXT", rawText);
 
     let parsed;

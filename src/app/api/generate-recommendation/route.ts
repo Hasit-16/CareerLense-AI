@@ -69,20 +69,25 @@ export async function POST(req: NextRequest) {
 
     // Invoke Formatter strictly mapped mathematically 
     const prompt = `
-Convert this strictly formatted computational career recommendation into simple user-ready formats.
+Convert this strictly structured data into a simple, natural explanation.
 
-Data Input Payload:
-${JSON.stringify(recResult, null, 2)}
-Feature Strengths Context:
-${JSON.stringify(features, null, 2)}
+INPUT:
+{
+  "bestPath": "${recResult?.best_match || 'Undecided'}",
+  "reasons": [
+    "Aligned heavily against explicitly evaluated user session flow.",
+    "Matched highest algorithmic limits dynamically tracked internally.",
+    "User dynamically selected paths bounded closely matching ${JSON.stringify(analysisRes?.dominant_interests)}."
+  ]
+}
 
 Requirements:
-1. Explain logically WHY the "best_match" was mathematically chosen relying inherently on the highest tracked structural values sequentially.
-2. Formulate a 2-sentence "parent_summary" natively phrasing logic warmly cleanly avoiding raw integer outputs.
+1. Explain logically WHY this was chosen using the reasons provided.
+2. Formulate a 2-sentence "parent_summary" natively phrasing logic warmly.
 
 STRICT JSON OUTPUT COMPLIANCE ONLY:
 {
-  "explanation": "Simple string outlining the structural advantages dynamically bounding paths successfully",
+  "explanation": "Simple string outlining the advantages",
   "parent_summary": "Clean warm formatted presentation natively parsing success potentials rapidly"
 }
 `;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateQuestionWithCohere } from "@/lib/cohere";
 import { createClient } from '@supabase/supabase-js';
 import { analyzeSession } from '@/lib/sessionAnalyzer';
+import { getNextStep } from '@/lib/questionDecisionEngine';
 
 // Cohere is used only for adaptive MCQ generation.
 // Career path selection is not done here.
@@ -113,56 +114,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, isComplete: true, progress: previousAnswers.length });
     }
 
-    const dataset = marksheetObj ? getDatasetType(marksheetObj.class_level, marksheetObj.stream) : 'unknown';
+    const { currentPath, dimension, allowedDomains } = getNextStep(
+      marksheetObj?.class_level || '10',
+      marksheetObj?.stream || null,
+      previousAnswers
+    );
+
+    console.log("[FLOW]", currentPath, dimension, allowedDomains);
 
     const prompt = `
-You are a smart career guide for Indian students.
+You are NOT allowed to think freely.
 
-Context:
+You are only allowed to convert structured input into a clean MCQ.
+
+INPUT:
 - Class: ${marksheetObj?.class_level || 'Unknown'}
 - Stream: ${marksheetObj?.stream || 'Unknown'}
-- Features: ${JSON.stringify(featureData)}
+- Current Path: ${currentPath}
+- Allowed Domains: ${JSON.stringify(allowedDomains)}
+- Question Dimension: ${dimension}
 - Previous Answers: ${JSON.stringify(previousAnswers)}
-- Asked Dimensions: ${JSON.stringify(askedDimensions)}
-- Dataset: ${dataset}
 
-Task:
-Generate ONE short MCQ question.
-
-STRICT RULES:
+RULES:
 
 1. Question:
-- max 12 words
-- simple English
-- student-friendly
-- engaging tone
+- max 10 words
+- very simple English
+- for Indian students
 
 2. Options:
 - exactly 4
-- max 6 words each
-- NOT sentences
-- clear and meaningful
+- max 4 words each
+- MUST come ONLY from allowed domains
+- DO NOT invent anything outside allowedDomains
 
-3. No repetition:
-- do not repeat previous idea
-- do not repeat dimension
-- explore new decision area
+3. Strict Boundaries:
+- DO NOT introduce new topics
+- DO NOT jump domains
+- DO NOT go outside dataset
+- DO NOT generate research or advanced topics
 
 4. Adaptivity:
-- must depend on previous answers
-- refine decision direction
+- Question MUST depend on previous answers
+- Must refine decision within currentPath
 
-5. Dataset rule:
-- Class 10 -> ask about stream vs diploma
-- Class 12 -> ask about career paths in stream
-- never go outside dataset
+5. Class Rule:
+- If class = 10 -> ONLY ask stream vs diploma
+- If class = 12 -> ONLY ask career inside stream
 
-Output JSON ONLY:
+OUTPUT JSON ONLY:
 
 {
   "question": "",
   "options": ["", "", "", ""],
-  "dimension": ""
+  "dimension": "${dimension}"
 }
 `;
     
