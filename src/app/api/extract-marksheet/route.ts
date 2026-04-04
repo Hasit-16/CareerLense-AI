@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logStep } from '@/lib/logger';
 import Tesseract from 'tesseract.js';
-import { generateJSONWithCohere } from '@/lib/cohere';
+import { parseMarksheet } from '@/lib/parseMarksheet';
+
+// Tesseract is used only for raw text extraction.
+// No AI provider is used in OCR or parsing.
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,53 +31,25 @@ export async function POST(req: NextRequest) {
     const buffer = await blob.arrayBuffer();
     const rawImageBuffer = Buffer.from(buffer);
 
-    logStep("STARTING TESSERACT OCR", "Evaluating buffer structure...");
+    logStep("[OCR] Tesseract extraction started", "Evaluating buffer structure...");
     const { data: { text: rawText } } = await Tesseract.recognize(rawImageBuffer, 'eng');
     logStep("OCR RAW TEXT", rawText);
 
-    const prompt = `
-Extract marksheet data precisely into this JSON format based on the following chaotic OCR text:
-
-{
-  "board": "GSEB, CBSE, or ICSE",
-  "class_level": "10 or 12",
-  "stream": "Science, Commerce, Arts (if 12th only)",
-  "subjects": [
-    { "name": "Subject Name", "marks": 0 }
-  ],
-  "percentage": 0.0
-}
-
-Raw Unstructured OCR Text:
-${rawText}
-
-Rules:
-- Strictly return valid JSON. No explanations.
-- Try to detect percentage accurately.
-- Stream can be empty if class 10.
-`;
-
-    const text = await generateJSONWithCohere(prompt);
-    
-    const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    logStep("NORMALIZED TEXT", cleanText);
-
     let parsed;
     try {
-      parsed = JSON.parse(cleanText);
-    } catch (e) {
-      logStep("ERROR", "Failed to parse Gemini output: " + text);
-      return NextResponse.json({ error: 'Invalid AI response from Gemini' }, { status: 500 });
+      parsed = parseMarksheet(rawText);
+    } catch (e: any) {
+      logStep("ERROR", "Failed to parse OCR limits bounds: " + e.message);
+      return NextResponse.json({ error: 'Validation Fault: Imperfect Marksheet Match' }, { status: 500 });
     }
 
     logStep("PARSED DATA", parsed);
-    logStep("RAW SUBJECT LINES", parsed.subjects);
     logStep("SUBJECTS EXTRACTED", parsed.subjects);
 
-    const board = String(parsed.board || '').toUpperCase();
+    const board = parsed.board;
     logStep("BOARD DETECTED", board);
     
-    const classLevel = String(parsed.class_level || '').toUpperCase();
+    const classLevel = parsed.class_level;
     logStep("CLASS DETECTED", classLevel);
     
     logStep("STREAM DETECTED", parsed.stream);

@@ -3,6 +3,9 @@ import { generateQuestionWithCohere } from "@/lib/cohere";
 import { createClient } from '@supabase/supabase-js';
 import { analyzeSession } from '@/lib/sessionAnalyzer';
 
+// Cohere is used only for adaptive MCQ generation.
+// Career path selection is not done here.
+
 function getDatasetType(classLevel: string, stream?: string | null) {
   const normLevel = classLevel.replace(/\D/g, '');
   if (normLevel === '10') return 'after_10th';
@@ -164,6 +167,7 @@ Output JSON ONLY:
 `;
     
     // Execute precisely mapped Cohere execution node!
+    console.log("[QUESTION] Cohere question generation started");
     const text = await generateQuestionWithCohere(prompt);
     const cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
 

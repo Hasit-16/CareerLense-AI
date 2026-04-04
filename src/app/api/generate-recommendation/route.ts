@@ -6,6 +6,9 @@ import { analyzeSession } from '@/lib/sessionAnalyzer';
 import fs from 'fs';
 import path from 'path';
 
+// Final career recommendation is deterministic and dataset-driven.
+// AI is not used to decide the final path.
+
 export async function POST(req: NextRequest) {
   try {
     const { marksheetId } = await req.json();
@@ -55,6 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Trigger deterministic logic mapping
+    console.log("[RECOMMENDATION] Deterministic scoring started");
     const recResult = generateRecommendation({
        features,
        sessionAnalysis: analysisRes,
@@ -86,6 +90,7 @@ STRICT JSON OUTPUT COMPLIANCE ONLY:
     let parentSummaryStr = "";
 
     try {
+      console.log("[EXPLANATION] Cohere explanation formatting started");
       const outputRaw = await generateJSONWithCohere(prompt);
       const output = outputRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
       const p = JSON.parse(output);
